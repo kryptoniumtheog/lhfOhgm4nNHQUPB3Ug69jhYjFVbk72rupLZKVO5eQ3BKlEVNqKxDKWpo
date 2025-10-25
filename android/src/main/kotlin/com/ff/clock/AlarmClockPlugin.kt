@@ -42,7 +42,7 @@ class AlarmClockPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
   private fun scheduleAlarmClock(context: Context, id: Int, triggerAtMillis: Long, title: String, text: String) {
     val am = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
 
-    // Broadcast that will fire at the alarm time – shows our alarm notification
+    // Broadcast that will fire at the alarm time - shows our alarm notification
     val fireIntent = Intent(context, AlarmFireReceiver::class.java).apply {
       putExtra("id", id)
       putExtra("title", title)
