@@ -24,13 +24,11 @@ class AlarmClockPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
 
   override fun onMethodCall(@NonNull call: MethodCall, @NonNull result: MethodChannel.Result) {
     when (call.method) {
-      "schedule" -> {
-        schedule(call, result)
-      }
-      "cancel" -> {
-        cancel(call, result)
-      }
-      // NEW: check exact-alarms permission (Android 12+)
+      "schedule" -> schedule(call, result) // back-compat
+      "scheduleAt" -> scheduleAt(call, result)
+      "cancel" -> cancel(call, result)
+      "snooze" -> snooze(call, result)
+      "stop" -> stop(call, result)
       "hasExactPermission" -> {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
           val am = appContext.getSystemService(Context.ALARM_SERVICE) as AlarmManager
@@ -39,7 +37,6 @@ class AlarmClockPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
           result.success(true)
         }
       }
-      // NEW: open OS Alarms & reminders settings
       "openExactAlarmSettings" -> {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
           try {
@@ -54,7 +51,6 @@ class AlarmClockPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
           result.success(true)
         }
       }
-      // NEW: debug - fire alarm broadcast immediately
       "debugFireNow" -> {
         try {
           val intent = Intent("com.ff.clock.ALARM")
@@ -113,6 +109,54 @@ class AlarmClockPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
     )
     am.cancel(firePI)
     result.success(null)
+  }
+
+  private fun scheduleAt(call: MethodCall, result: MethodChannel.Result) {
+    val id = call.argument<Int>("id") ?: 0
+    val epoch = call.argument<Long>("epoch") ?: (System.currentTimeMillis() + 60_000L)
+    val title = call.argument<String>("title") ?: ""
+    val text = call.argument<String>("text") ?: ""
+    val type = call.argument<String>("type") ?: "alarm"
+    val snoozeMin = call.argument<Int>("snoozeMinutes") ?: 10
+
+    val intent = Intent(appContext, AlarmFireReceiver::class.java).apply {
+      putExtra("id", id)
+      putExtra("title", title)
+      putExtra("text", text)
+      putExtra("type", type)
+      putExtra(FFConst.EXTRA_SNOOZE_MIN, snoozeMin)
+    }
+    val pi = PendingIntent.getBroadcast(
+      appContext, id, intent,
+      PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+    )
+
+    val showIntent = appContext.packageManager.getLaunchIntentForPackage(appContext.packageName)
+    val showPI = PendingIntent.getActivity(
+      appContext, id, showIntent,
+      PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+    )
+
+    val am = appContext.getSystemService(Context.ALARM_SERVICE) as AlarmManager
+    am.setAlarmClock(AlarmManager.AlarmClockInfo(epoch, showPI), pi)
+    result.success(true)
+  }
+
+  private fun snooze(call: MethodCall, result: MethodChannel.Result) {
+    val id = call.argument<Int>("id") ?: 0
+    val minutes = call.argument<Int>("minutes") ?: 10
+    appContext.stopService(Intent(appContext, AlarmForegroundService::class.java))
+    val nm = appContext.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+    nm.cancel(id)
+    result.success(true)
+  }
+
+  private fun stop(call: MethodCall, result: MethodChannel.Result) {
+    val id = call.argument<Int>("id") ?: 0
+    appContext.stopService(Intent(appContext, AlarmForegroundService::class.java))
+    val nm = appContext.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+    nm.cancel(id)
+    result.success(true)
   }
 
   override fun onDetachedFromEngine(@NonNull binding: FlutterPlugin.FlutterPluginBinding) {

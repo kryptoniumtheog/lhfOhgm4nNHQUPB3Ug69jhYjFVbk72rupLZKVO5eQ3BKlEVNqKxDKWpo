@@ -6,6 +6,7 @@
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
     <uses-permission android:name="android.permission.USE_FULL_SCREEN_INTENT"/>
     <uses-permission android:name="android.permission.WAKE_LOCK"/>
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE"/>
 
     <application>
         <receiver
@@ -15,5 +16,16 @@
                 <action android:name="com.ff.clock.ALARM" />
             </intent-filter>
         </receiver>
+
+        <!-- Handles reminder/alarm action buttons -->
+        <receiver
+            android:name=".ActionReceiver"
+            android:exported="false"/>
+
+        <!-- Foreground service keeps ALARM mode alive until user hits Stop/Snooze -->
+        <service
+            android:name=".AlarmForegroundService"
+            android:exported="false"
+            android:foregroundServiceType="mediaPlayback|phoneCall"/>
     </application>
 </manifest>
