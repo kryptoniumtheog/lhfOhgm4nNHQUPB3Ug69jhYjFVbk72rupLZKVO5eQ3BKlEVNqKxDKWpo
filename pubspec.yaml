@@ -1,0 +1,23 @@
+name: ff_set_alarm_clock
+description: Minimal plugin to schedule/cancel exact alarms via AlarmManager.setAlarmClock.
+version: 0.0.1
+homepage: https://github.com/kryptoniumtheog/lhfOhgm4nNHQUPB3Ug69jhYjFVbk72rupLZKVO5eQ3BKlEVNqKxDKWpo
+publish_to: "none"
+
+environment:
+  sdk: ">=2.17.0 <4.0.0"
+
+flutter:
+  plugin:
+    platforms:
+      android:
+        package: com.ff.clock
+        pluginClass: AlarmClockPlugin
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+platforms:
+  android:
+    min_sdk: 21

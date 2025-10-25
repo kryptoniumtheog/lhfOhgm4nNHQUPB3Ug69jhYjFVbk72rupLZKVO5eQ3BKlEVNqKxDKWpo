@@ -1,0 +1,8 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="com.ff.clock">
+  <application>
+    <receiver
+      android:name="com.ff.clock.AlarmFireReceiver"
+      android:exported="false" />
+  </application>
+</manifest>
