@@ -1,0 +1,23 @@
+plugins {
+  id "com.android.library"
+  id "org.jetbrains.kotlin.android"
+}
+
+android {
+  namespace "com.ff.clock"       // match your Kotlin package
+  compileSdkVersion 34
+
+  defaultConfig {
+    minSdkVersion 21
+    // no targetSdk here; let the host app decide
+    consumerProguardFiles "consumer-rules.pro"
+  }
+
+  sourceSets {
+    main.java.srcDirs += "src/main/kotlin"
+  }
+}
+
+dependencies {
+  implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.9.22"
+}
