@@ -2,7 +2,7 @@ import 'dart:async';
 import 'package:flutter/services.dart';
 
 class FFAlarmClock {
-  static const MethodChannel _ch = MethodChannel('ff_clock');
+  static const _ch = MethodChannel('ff_set_alarm_clock');
 
   /// Schedule an exact alarm via native setAlarmClock(...)
   static Future<void> schedule(int id, DateTime when,
@@ -29,5 +29,10 @@ class FFAlarmClock {
   /// NEW: Open the OS page to grant "Alarms & reminders".
   static Future<void> openExactAlarmSettings() async {
     await _ch.invokeMethod('openExactAlarmSettings');
+  }
+
+  /// NEW: debug helper ù fire the alarm broadcast immediately.
+  static Future<void> debugFireNow() async {
+    await _ch.invokeMethod('debugFireNow');
   }
 }

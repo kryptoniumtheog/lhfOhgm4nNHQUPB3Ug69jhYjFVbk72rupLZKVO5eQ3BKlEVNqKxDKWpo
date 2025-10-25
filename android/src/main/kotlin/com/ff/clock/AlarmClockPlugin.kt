@@ -18,7 +18,7 @@ class AlarmClockPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
 
   override fun onAttachedToEngine(@NonNull binding: FlutterPlugin.FlutterPluginBinding) {
     appContext = binding.applicationContext
-    channel = MethodChannel(binding.binaryMessenger, "ff_clock")
+    channel = MethodChannel(binding.binaryMessenger, "ff_set_alarm_clock")
     channel.setMethodCallHandler(this)
   }
 
@@ -52,6 +52,17 @@ class AlarmClockPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
           }
         } else {
           result.success(true)
+        }
+      }
+      // NEW: debug - fire alarm broadcast immediately
+      "debugFireNow" -> {
+        try {
+          val intent = Intent("com.ff.clock.ALARM")
+          intent.setPackage(appContext.packageName)
+          appContext.sendBroadcast(intent)
+          result.success(true)
+        } catch (e: Exception) {
+          result.error("DEBUG_FIRE", e.message, null)
         }
       }
       else -> result.notImplemented()
@@ -106,5 +117,13 @@ class AlarmClockPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
 
   override fun onDetachedFromEngine(@NonNull binding: FlutterPlugin.FlutterPluginBinding) {
     channel.setMethodCallHandler(null)
+  }
+
+  // Helper function to check exact alarm permission
+  private fun hasExactPermission(ctx: Context): Boolean {
+    return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+      val am = ctx.getSystemService(Context.ALARM_SERVICE) as AlarmManager
+      am.canScheduleExactAlarms()
+    } else true
   }
 }
