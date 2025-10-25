@@ -2,36 +2,31 @@ import 'dart:async';
 import 'package:flutter/services.dart';
 
 class FFAlarmClock {
-  static const MethodChannel _ch = MethodChannel('ff.alarmclock');
+  static const MethodChannel _ch = MethodChannel('ff_clock');
 
-  /// Schedule an exact alarm that will ring at [when].
-  /// [id] must be unique per alarm (use it to cancel).
-  static Future<void> schedule(
-    int id,
-    DateTime when, {
-    String title = 'Alarm',
-    String text = '',
-  }) async {
-    await _ch.invokeMethod('scheduleAlarmClock', <String, dynamic>{
+  /// Schedule an exact alarm via native setAlarmClock(...)
+  static Future<void> schedule(int id, DateTime when,
+      {required String title, required String text}) async {
+    await _ch.invokeMethod('schedule', {
       'id': id,
-      'when': when.millisecondsSinceEpoch,
+      'epoch': when.millisecondsSinceEpoch,
       'title': title,
       'text': text,
     });
   }
 
-  /// Cancel a previously scheduled alarm by [id].
+  /// Cancel a previously scheduled alarm.
   static Future<void> cancel(int id) async {
-    await _ch.invokeMethod('cancel', <String, dynamic>{'id': id});
+    await _ch.invokeMethod('cancel', {'id': id});
   }
 
-  /// Check if the app has permission to schedule exact alarms (Android 12+)
+  /// NEW: Android 12+ exact-alarms permission check.
   static Future<bool> hasExactPermission() async {
-    final v = await _ch.invokeMethod('hasExactPermission');
-    return v == true;
+    final ok = await _ch.invokeMethod<bool>('hasExactPermission');
+    return ok ?? true; // pre-Android 12 returns true
   }
 
-  /// Open system settings to grant exact alarm permission
+  /// NEW: Open the OS page to grant "Alarms & reminders".
   static Future<void> openExactAlarmSettings() async {
     await _ch.invokeMethod('openExactAlarmSettings');
   }
