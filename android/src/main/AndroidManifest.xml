@@ -1,14 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
-<manifest package="com.ff.clock" xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest package="com.ff.clock"
+    xmlns:android="http://schemas.android.com/apk/res/android">
 
-  <!-- Your broadcast fired by setAlarmClock() PendingIntent -->
-  <receiver
-      android:name="com.ff.clock.AlarmFireReceiver"
-      android:exported="true"
-      android:enabled="true">
-    <intent-filter>
-      <action android:name="com.ff.clock.ALARM_FIRE"/>
-    </intent-filter>
-  </receiver>
+    <application>
+        <receiver
+            android:name="com.ff.clock.AlarmFireReceiver"
+            android:exported="true"
+            android:enabled="true">
+            <intent-filter>
+                <action android:name="com.ff.clock.ALARM_FIRE"/>
+            </intent-filter>
+        </receiver>
+    </application>
 
 </manifest>
