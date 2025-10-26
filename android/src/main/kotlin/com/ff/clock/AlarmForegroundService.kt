@@ -5,6 +5,7 @@ import android.content.*
 import android.media.*
 import android.os.*
 import androidx.core.app.NotificationCompat
+import android.content.pm.ServiceInfo
 
 class AlarmForegroundService : Service() {
   private var player: MediaPlayer? = null
@@ -80,7 +81,18 @@ class AlarmForegroundService : Service() {
       .build()
 
     // Start foreground
-    startForeground(notifId, notif)
+    try {
+      if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+        startForeground(notifId, notif, 
+          ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PLAYBACK)
+      } else {
+        startForeground(notifId, notif)
+      }
+      FileLogger.log(this, "Service start ok id=$notifId title='$title' snooze=$snoozeMin")
+    } catch (e: Exception) {
+      FileLogger.log(this, "Service fatal error: ${e.stackTraceToString()}")
+      stopSelf()
+    }
 
     // Loop the alarm tone with error handling
     try {
