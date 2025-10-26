@@ -13,6 +13,7 @@ import androidx.annotation.NonNull
 import io.flutter.embedding.engine.plugins.FlutterPlugin
 import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
+import io.flutter.plugin.common.MethodChannel.Result as FlutterResult
 
 class AlarmClockPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
   private lateinit var channel: MethodChannel
@@ -24,7 +25,7 @@ class AlarmClockPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
     channel.setMethodCallHandler(this)
   }
 
-  override fun onMethodCall(@NonNull call: MethodCall, @NonNull result: MethodChannel.Result) {
+  override fun onMethodCall(@NonNull call: MethodCall, @NonNull result: FlutterResult) {
     FileLogger.log(appContext, "onMethodCall ${call.method}")
     when (call.method) {
       "schedule" -> schedule(call, result) // back-compat
@@ -76,7 +77,7 @@ class AlarmClockPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
   }
 
   // keep your existing helpers:
-  private fun schedule(call: MethodCall, result: MethodChannel.Result) {
+  private fun schedule(call: MethodCall, result: FlutterResult) {
     val id = call.argument<Int>("id") ?: 0
     val epoch = call.argument<Long>("epoch") ?: System.currentTimeMillis() + 60_000L
     val title = call.argument<String>("title") ?: "Alarm"
@@ -109,7 +110,7 @@ class AlarmClockPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
     result.success(null)
   }
   
-  private fun cancel(call: MethodCall, result: MethodChannel.Result) {
+  private fun cancel(call: MethodCall, result: FlutterResult) {
     val id = call.argument<Int>("id") ?: 0
     val am = appContext.getSystemService(Context.ALARM_SERVICE) as AlarmManager
     val fireIntent = Intent(appContext, AlarmFireReceiver::class.java)
@@ -121,7 +122,7 @@ class AlarmClockPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
     result.success(null)
   }
 
-  private fun scheduleAt(call: MethodCall, result: MethodChannel.Result) {
+  private fun scheduleAt(call: MethodCall, result: FlutterResult) {
     val id = call.argument<Int>("id") ?: 0
     val epoch = call.argument<Long>("epoch") ?: (System.currentTimeMillis() + 60_000L)
     val title = call.argument<String>("title") ?: ""
@@ -154,7 +155,7 @@ class AlarmClockPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
     result.success(true)
   }
 
-  private fun snooze(call: MethodCall, result: MethodChannel.Result) {
+  private fun snooze(call: MethodCall, result: FlutterResult) {
     try {
       val id = call.argument<Int>("id") ?: 0
       val minutes = call.argument<Int>("minutes") ?: 10
@@ -169,7 +170,7 @@ class AlarmClockPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
     }
   }
 
-  private fun stop(call: MethodCall, result: MethodChannel.Result) {
+  private fun stop(call: MethodCall, result: FlutterResult) {
     try {
       val id = call.argument<Int>("id") ?: 0
       FileLogger.log(appContext, "stop() id=$id")
@@ -195,7 +196,7 @@ class AlarmClockPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
     } else true
   }
 
-  private fun openNotificationSettings(result: Result) {
+  private fun openNotificationSettings(result: FlutterResult) {
     try {
       val ctx = appContext ?: return result.error("NOCTX", "No context", null)
 
@@ -225,7 +226,7 @@ class AlarmClockPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
     }
   }
 
-  private fun openBatteryOptimizationSettings(result: Result) {
+  private fun openBatteryOptimizationSettings(result: FlutterResult) {
     try {
       val ctx = appContext ?: return result.error("NOCTX", "No context", null)
       val i = Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS).apply {
