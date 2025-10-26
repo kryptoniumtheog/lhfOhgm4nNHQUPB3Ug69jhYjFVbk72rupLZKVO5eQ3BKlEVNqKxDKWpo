@@ -2,7 +2,7 @@ package com.ff.clock
 
 import android.app.AlarmManager
 import android.app.PendingIntent
-import android.app.NotificationManager   // <-- add this
+import android.app.NotificationManager
 import android.content.Context
 import android.content.Intent
 import android.os.Build
@@ -24,6 +24,7 @@ class AlarmClockPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
   }
 
   override fun onMethodCall(@NonNull call: MethodCall, @NonNull result: MethodChannel.Result) {
+    FileLogger.log(appContext, "onMethodCall ${call.method}")
     when (call.method) {
       "schedule" -> schedule(call, result) // back-compat
       "scheduleAt" -> scheduleAt(call, result)
@@ -61,6 +62,11 @@ class AlarmClockPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
         } catch (e: Exception) {
           result.error("DEBUG_FIRE", e.message, null)
         }
+      }
+      "readLog" -> result.success(FileLogger.read(appContext))
+      "clearLog" -> {
+        FileLogger.clear(appContext)
+        result.success(true)
       }
       else -> result.notImplemented()
     }
@@ -119,6 +125,8 @@ class AlarmClockPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
     val text = call.argument<String>("text") ?: ""
     val type = call.argument<String>("type") ?: "alarm"
     val snoozeMin = call.argument<Int>("snoozeMinutes") ?: 10
+    
+    FileLogger.log(appContext, "scheduleAt() called with id=$id type=$type epoch=$epoch title=$title")
 
     val intent = Intent(appContext, AlarmFireReceiver::class.java).apply {
       putExtra("id", id)
@@ -144,20 +152,32 @@ class AlarmClockPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
   }
 
   private fun snooze(call: MethodCall, result: MethodChannel.Result) {
-    val id = call.argument<Int>("id") ?: 0
-    val minutes = call.argument<Int>("minutes") ?: 10
-    appContext.stopService(Intent(appContext, AlarmForegroundService::class.java))
-    val nm = appContext.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-    nm.cancel(id)
-    result.success(true)
+    try {
+      val id = call.argument<Int>("id") ?: 0
+      val minutes = call.argument<Int>("minutes") ?: 10
+      FileLogger.log(appContext, "snooze() id=$id minutes=$minutes")
+      appContext.stopService(Intent(appContext, AlarmForegroundService::class.java))
+      val nm = appContext.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+      nm.cancel(id)
+      result.success(true)
+    } catch (e: Throwable) {
+      FileLogger.log(appContext, "snooze() error: ${e.message}\n${e.stackTraceToString()}")
+      result.error("SNOOZE", e.message, null)
+    }
   }
 
   private fun stop(call: MethodCall, result: MethodChannel.Result) {
-    val id = call.argument<Int>("id") ?: 0
-    appContext.stopService(Intent(appContext, AlarmForegroundService::class.java))
-    val nm = appContext.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-    nm.cancel(id)
-    result.success(true)
+    try {
+      val id = call.argument<Int>("id") ?: 0
+      FileLogger.log(appContext, "stop() id=$id")
+      appContext.stopService(Intent(appContext, AlarmForegroundService::class.java))
+      val nm = appContext.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+      nm.cancel(id)
+      result.success(true)
+    } catch (e: Throwable) {
+      FileLogger.log(appContext, "stop() error: ${e.message}\n${e.stackTraceToString()}")
+      result.error("STOP", e.message, null)
+    }
   }
 
   override fun onDetachedFromEngine(@NonNull binding: FlutterPlugin.FlutterPluginBinding) {

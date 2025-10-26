@@ -8,14 +8,17 @@ import io.flutter.Log
 class ActionReceiver : BroadcastReceiver() {
   override fun onReceive(context: Context, intent: Intent) {
     val id = intent.getIntExtra(FFConst.EXTRA_ID, 0)
+    FileLogger.log(context, "ActionReceiver ${intent.action} id=$id")
     when (intent.action) {
       FFConst.ACT_STOP -> {
         // Stop service & clear notif
+        FileLogger.log(context, "ActionReceiver STOP id=$id")
         context.stopService(Intent(context, AlarmForegroundService::class.java))
         val nm = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         nm.cancel(id)
       }
       FFConst.ACT_SNOOZE -> {
+        FileLogger.log(context, "ActionReceiver SNOOZE id=$id")
         context.stopService(Intent(context, AlarmForegroundService::class.java))
         val minutes = intent.getIntExtra(FFConst.EXTRA_SNOOZE_MIN, 10)
         val whenMs = System.currentTimeMillis() + minutes * 60_000L

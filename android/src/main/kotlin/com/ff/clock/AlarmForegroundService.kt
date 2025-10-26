@@ -16,10 +16,13 @@ class AlarmForegroundService : Service() {
   override fun onBind(intent: Intent?) = null
 
   override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-    notifId = intent?.getIntExtra(FFConst.EXTRA_ID, 0) ?: 0
-    title = intent?.getStringExtra(FFConst.EXTRA_TITLE) ?: "Alarm"
-    text = intent?.getStringExtra(FFConst.EXTRA_TEXT) ?: ""
-    snoozeMin = intent?.getIntExtra(FFConst.EXTRA_SNOOZE_MIN, 10) ?: 10
+    try {
+      notifId = intent?.getIntExtra(FFConst.EXTRA_ID, 0) ?: 0
+      title = intent?.getStringExtra(FFConst.EXTRA_TITLE) ?: "Alarm"
+      text = intent?.getStringExtra(FFConst.EXTRA_TEXT) ?: ""
+      snoozeMin = intent?.getIntExtra(FFConst.EXTRA_SNOOZE_MIN, 10) ?: 10
+      
+      FileLogger.log(this, "Service start id=$notifId title='$title' snooze=$snoozeMin")
 
     // Channel
     val nm = getSystemService(NOTIFICATION_SERVICE) as NotificationManager
@@ -69,7 +72,7 @@ class AlarmForegroundService : Service() {
       .setContentText(text)
       .setCategory(NotificationCompat.CATEGORY_ALARM)
       .setPriority(NotificationCompat.PRIORITY_MAX)
-      .setOngoing(true)                    // <— cannot swipe away
+      .setOngoing(true)                    // < cannot swipe away
       .setAutoCancel(false)
       .setFullScreenIntent(fullScreenPI, true)
       .addAction(0, "Snooze", snoozePI)
@@ -79,22 +82,37 @@ class AlarmForegroundService : Service() {
     // Start foreground
     startForeground(notifId, notif)
 
-    // Loop the alarm tone
-    player = MediaPlayer.create(this,
-      RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM)
-    ).apply {
-      isLooping = true
-      setAudioAttributes(
-        AudioAttributes.Builder().setUsage(AudioAttributes.USAGE_ALARM).build()
-      )
-      start()
+    // Loop the alarm tone with error handling
+    try {
+      val uri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM)
+      FileLogger.log(this, "MediaPlayer create with uri=$uri")
+      player = MediaPlayer().apply {
+        setAudioAttributes(
+          AudioAttributes.Builder().setUsage(AudioAttributes.USAGE_ALARM).build()
+        )
+        setDataSource(this@AlarmForegroundService, uri)
+        isLooping = true
+        prepare()
+        start()
+      }
+      FileLogger.log(this, "MediaPlayer started")
+    } catch (e: Throwable) {
+      FileLogger.log(this, "MediaPlayer error: ${e.message}\n${e.stackTraceToString()}")
     }
 
     return START_STICKY
+    } catch (e: Throwable) {
+      FileLogger.log(this, "Service fatal error: ${e.message}\n${e.stackTraceToString()}")
+      stopSelf()
+      return START_NOT_STICKY
+    }
   }
 
   override fun onDestroy() {
-    player?.stop(); player?.release(); player = null
+    FileLogger.log(this, "Service onDestroy")
+    try { player?.stop() } catch (_: Throwable) {}
+    try { player?.release() } catch (_: Throwable) {}
+    player = null
     super.onDestroy()
   }
 }

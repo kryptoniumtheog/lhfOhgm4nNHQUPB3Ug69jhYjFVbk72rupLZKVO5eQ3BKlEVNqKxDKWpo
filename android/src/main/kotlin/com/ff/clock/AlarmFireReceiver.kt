@@ -20,6 +20,8 @@ class AlarmFireReceiver : BroadcastReceiver() {
     val text  = intent.getStringExtra("text") ?: ""
     val type  = intent.getStringExtra("type") ?: "alarm" // default
     val snoozeMin = intent.getIntExtra(FFConst.EXTRA_SNOOZE_MIN, 10)
+    
+    FileLogger.log(context, "AlarmFireReceiver onReceive id=$id type=$type text='$text' snooze=$snoozeMin")
 
     if (type == "reminder") {
       // Dismissible, short sound, actions
@@ -54,7 +56,7 @@ class AlarmFireReceiver : BroadcastReceiver() {
         .setSmallIcon(android.R.drawable.ic_popup_reminder)
         .setContentTitle(title)
         .setContentText(text)
-        .setAutoCancel(true)                 // <— dismissible, short
+        .setAutoCancel(true)                 // < dismissible, short
         .setPriority(NotificationCompat.PRIORITY_HIGH)
         .addAction(0, "Skip", skipPI)
         .addAction(0, "Snooze", snoozePI)
