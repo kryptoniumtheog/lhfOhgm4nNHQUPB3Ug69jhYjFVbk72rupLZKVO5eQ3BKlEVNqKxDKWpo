@@ -5,6 +5,7 @@ import android.app.PendingIntent
 import android.app.NotificationManager
 import android.content.Context
 import android.content.Intent
+import android.net.Uri
 import android.os.Build
 import android.os.SystemClock
 import android.provider.Settings
@@ -68,6 +69,8 @@ class AlarmClockPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
         FileLogger.clear(appContext)
         result.success(true)
       }
+      "openNotificationSettings" -> openNotificationSettings(result)
+      "openBatteryOptimizationSettings" -> openBatteryOptimizationSettings(result)
       else -> result.notImplemented()
     }
   }
@@ -190,5 +193,49 @@ class AlarmClockPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
       val am = ctx.getSystemService(Context.ALARM_SERVICE) as AlarmManager
       am.canScheduleExactAlarms()
     } else true
+  }
+
+  private fun openNotificationSettings(result: Result) {
+    try {
+      val ctx = appContext ?: return result.error("NOCTX", "No context", null)
+
+      // Try the per-app notification settings screen
+      val i = Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).apply {
+        putExtra(Settings.EXTRA_APP_PACKAGE, ctx.packageName)
+        putExtra("app_package", ctx.packageName)                 // some OEMs
+        putExtra("app_uid", ctx.applicationInfo?.uid ?: 0)
+        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+      }
+      ctx.startActivity(i)
+      result.success(true)
+    } catch (t: Throwable) {
+      // Fallback to app details if OEM blocks the above
+      try {
+        val ctx = appContext
+        val i2 = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
+          data = Uri.parse("package:${ctx.packageName}")
+          addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        }
+        ctx.startActivity(i2)
+        result.success(true)
+      } catch (tt: Throwable) {
+        FileLogger.log(appContext, "openNotificationSettings failed ${tt.message}")
+        result.error("INTENT", tt.message, null)
+      }
+    }
+  }
+
+  private fun openBatteryOptimizationSettings(result: Result) {
+    try {
+      val ctx = appContext ?: return result.error("NOCTX", "No context", null)
+      val i = Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS).apply {
+        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+      }
+      ctx.startActivity(i)
+      result.success(true)
+    } catch (t: Throwable) {
+      FileLogger.log(appContext, "openBatteryOptimizationSettings failed ${t.message}")
+      result.error("INTENT", t.message, null)
+    }
   }
 }
